@@ -1,10 +1,15 @@
-#!/usr/bin/env python 
-from datetime import date, datetime, timedelta
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import argparse
 import json
+import os
 
+from datetime import date, datetime, timedelta
+from distutils.util import strtobool
+
+from dotenv import load_dotenv
 from evernote.api.client import EvernoteClient
-from config import Settings
 
 
 WEEK_DAYS = {
@@ -38,11 +43,15 @@ if __name__ == '__main__':
                         help='date in format "YYYY-MM-DD"')
     args = parser.parse_args()
 
-    config = Settings()
+    load_dotenv()
+    en_token = os.getenv('EVERNOTE_PERSONAL_TOKEN')
+    en_is_sandbox = strtobool(os.getenv('EVERNOTE_IS_SANDBOX'))
+    en_journal_guid = os.getenv('JOURNAL_NOTEBOOK_GUID')
+    en_template_guid = os.getenv('JOURNAL_TEMPLATE_NOTE_GUID')
 
     client = EvernoteClient(
-        token=config.EVERNOTE_PERSONAL_TOKEN,
-        sandbox=False # Default: True
+        token=en_token,
+        sandbox=en_is_sandbox
     )
     noteStore = client.get_note_store()
 
@@ -54,7 +63,7 @@ if __name__ == '__main__':
     print('Title Context is:')
     print(json.dumps(context, ensure_ascii=False, indent=4))
 
-    new_note = noteStore.copyNote(config.JOURNAL_TEMPLATE_NOTE_GUID, config.JOURNAL_NOTEBOOK_GUID)
+    new_note = noteStore.copyNote(en_template_guid, en_journal_guid)
     utitle_without_comment = new_note.title.decode('utf8').split('#', 1)[0]
     utitle = utitle_without_comment.strip().format(**context)
     new_note.title = utitle.encode('utf8')
